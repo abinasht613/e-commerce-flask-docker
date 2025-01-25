@@ -13,7 +13,8 @@ This will:
 *    Applies the migrations to the database: **docker-compose exec backend flask db upgrade**                            
 
 # Access the API
-*   /products	    GET	        Retrieve all products
+
+*   |/products      |	    GET	        | Retrieve all products|
 *   /products	    POST	    Add a new product
 *   /orders	        POST	    Place a new order
 *   /orders	        GET	        Retrieve all orders
