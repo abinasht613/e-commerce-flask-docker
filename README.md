@@ -13,16 +13,14 @@ This will:
 *    Applies the migrations to the database: **docker-compose exec backend flask db upgrade**                            
 
 # Access the API
-| First Header  | Second Header |
-| ------------- | ------------- |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
+| route        | method    | Description                |
+| -------------| ----------| -------------------------- |
+| /products    | GET       |    Retrieve all products   |
+| /products	   | POST	   |    Add a new product       |
+| /orders	   | POST	   |    Place a new order       |
+| /orders	   | GET	   |    Retrieve all orders     |
+| /invalid_url | GET/POST  |    Invalid Route Response  |
 
-*   |/products      |	    GET	        | Retrieve all products|
-*   /products	    POST	    Add a new product
-*   /orders	        POST	    Place a new order
-*   /orders	        GET	        Retrieve all orders
-*   /invalid_url    GET/POST    Invalid Route Response
 
 # Test Coverage
 
