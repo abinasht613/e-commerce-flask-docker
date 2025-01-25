@@ -8,19 +8,16 @@ This will:
 *   Set up the PostgreSQL database on port 5432.
 
 # Database Migration
-*   initial migration repository
-docker-compose exec backend flask db init                               
-*    Generates migration scripts based on model changes
-docker-compose exec backend flask db migrate -m "Initial migration"     
-*    Applies the migrations to the database  
-docker-compose exec backend flask db upgrade                            
+*   initial migration repository: docker-compose exec backend flask db init                               
+*    Generates migration scripts based on model changes : docker-compose exec backend flask db migrate -m "Initial migration"     
+*    Applies the migrations to the database: docker-compose exec backend flask db upgrade                            
 
 # Access the API
-/products	    GET	        Retrieve all products
-/products	    POST	    Add a new product
-/orders	        POST	    Place a new order
-/orders	        GET	        Retrieve all orders
-/invalid_url    GET/POST    Invalid Route Response
+*   /products	    GET	        Retrieve all products
+*   /products	    POST	    Add a new product
+*   /orders	        POST	    Place a new order
+*   /orders	        GET	        Retrieve all orders
+*   /invalid_url    GET/POST    Invalid Route Response
 
 # Test Coverage
 
