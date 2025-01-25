@@ -1,0 +1,46 @@
+#version: "3.8" #  specify docker-compose version  
+
+services:  
+  backend:
+    build: ./flask
+    container_name: flask_api_app
+    command: flask run --host=0.0.0.0 --port=5000
+    ports:
+      - "5000:5000"                 # expose the port to the host machine
+    depends_on:
+      db:                           # wait for the db service to be ready
+        condition: service_healthy  # wait for the db service to be healthy
+    environment:
+      FLASK_ENV: ${FLASK_ENV}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - app_network
+    restart: unless-stopped         # containers restart automatically if they fail unless it is stopped
+
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data    # persist data even after the container is stopped
+    ports:
+      - "5432:5432"     # expose the port to the host machine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"] # check if the db is ready
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network         # connect the db to the app network
+    restart: unless-stopped # containers restart automatically if they fail unless it is stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
