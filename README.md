@@ -1,3 +1,5 @@
+# copy .env.example to .env
+
 # Build 
 docker-compose up --build                                               
 
