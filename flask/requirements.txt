@@ -4,3 +4,7 @@ flask_cors
 Flask-Migrate
 python-dotenv
 psycopg2
+pytest
+flask-testing
+marshmallow
+marshmallow_sqlalchemy

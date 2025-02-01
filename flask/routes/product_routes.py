@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify
 from models.product import Product
 from models import db
+from validations.schema import ProductSchema
+
+product_schema = ProductSchema()
 
 bp = Blueprint('product_routes', __name__, url_prefix='/products')  # Create a Blueprint object
 
@@ -16,37 +19,42 @@ def get_products():
 @bp.route('/', methods=['POST'])
 def add_product():
 
-    data = request.json         # Get the JSON data from the request body
+    # data = request.json         # Get the JSON data from the request body
 
-    # Validation                # Check if the request body is missing
-    if not data:
-        return jsonify({"error": "Request body is missing."}), 400
+    # # Validation                # Check if the request body is missing
+    # if not data:
+    #     return jsonify({"error": "Request body is missing."}), 400
 
-    required_fields = ["name", "description", "price", "stock"]     # Check if the required fields are missing
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"'{field}' is a required field."}), 400
+    # required_fields = ["name", "description", "price", "stock"]     # Check if the required fields are missing
+    # for field in required_fields:
+    #     if field not in data:
+    #         return jsonify({"error": f"'{field}' is a required field."}), 400
 
-    if not isinstance(data['name'], (str)):                         # Check if the data types is string
-        return jsonify({"error": "'name' must be a string."}), 400
+    # if not isinstance(data['name'], (str)):                         # Check if the data types is string
+    #     return jsonify({"error": "'name' must be a string."}), 400
     
-    if not isinstance(data['description'], (str)):                  # Check if the data types is string
-        return jsonify({"error": "'description' must be a string."}), 400
+    # if not isinstance(data['description'], (str)):                  # Check if the data types is string
+    #     return jsonify({"error": "'description' must be a string."}), 400
 
-    if not isinstance(data['price'], (float, int)) or data['price'] <= 0:   # Check if the data types is float or int
-        return jsonify({"error": "'price' must be a positive number."}), 400
+    # if not isinstance(data['price'], (float, int)) or data['price'] <= 0:   # Check if the data types is float or int
+    #     return jsonify({"error": "'price' must be a positive number."}), 400
 
-    if not isinstance(data['stock'], int) or data['stock'] < 0:             # Check if the data types is int
-        return jsonify({"error": "'stock' must be a non-negative integer."}), 400
+    # if not isinstance(data['stock'], int) or data['stock'] < 0:             # Check if the data types is int
+    #     return jsonify({"error": "'stock' must be a non-negative integer."}), 400
 
+    data = request.get_json()
+    errors = product_schema.validate(data,session=db.session)
+    if errors:
+        return jsonify(errors), 400
     # Create and save the product
     try:
-        new_product = Product(
-            name        =   data['name'],
-            description =   data['description'],
-            price       =   float(data['price']),
-            stock       =   int(data['stock'])
-        )
+        # new_product = Product(
+        #     name        =   data['name'],
+        #     description =   data['description'],
+        #     price       =   float(data['price']),
+        #     stock       =   int(data['stock'])
+        # )
+        new_product = product_schema.load(data,session=db.session) 
         db.session.add(new_product)
         db.session.commit()
         return jsonify({"message": "Product added successfully!", "product_id": new_product.id}), 201

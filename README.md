@@ -1,7 +1,20 @@
 # copy .env.example to .env
 
-# Build 
-docker-compose up --build                                               
+# Build Test cases in Testing Container
+*   docker-compose -f docker-compose-test.yaml up --build -d
+*   docker-compose exec backend_test flask db init
+*   docker-compose exec backend_test flask db migrate -m "Initial migration"
+*   docker-compose exec backend_test flask db upgrade
+*   docker-compose exec backend_test pytest -v
+*   docker-compose -f docker-compose-test.yaml down -v
+
+
+# Build Production Container
+*   docker-compose up --build -d   
+*   docker-compose exec backend flask db init                                         
+*   docker-compose exec backend flask db migrate -m "Initial migration"   
+*   docker-compose exec backend flask db upgrade
+*   docker-compose down -v
 
 This will:
 

@@ -3,65 +3,72 @@ from models.order import Order
 from models.product import Product
 from models import db
 
+from validations.schema import OrderSchema
+
+order_schema = OrderSchema()
+
 bp = Blueprint('order_routes', __name__, url_prefix='/orders')
 
 @bp.route('/', methods=['POST'])
 def place_order():
-   
-    data = request.json         # Get the JSON data from the request body
-
-    # Validation    
-    if not data:                # Check if the request body is missing
-        return jsonify({"error": "Request body is missing."}), 400
-
-    # Check if the 'products' field is missing or not a list or empty
-    if 'products' not in data or not isinstance(data['products'], list) or len(data['products']) == 0:
-        return jsonify({"error": "'products' must be a non-empty list."}), 400
-
-    total_price = 0
-    updated_stock = {}
-
     try:
+        data    = request.get_json()
+        errors  = order_schema.validate(data,session=db.session)
+    
+        if errors:
+            return jsonify(errors), 400
+        # Initialize variables for price calculation and stock updates
+        total_price = 0
+        updated_stock = {}
+
+        # Get all product IDs from the order at once
+        product_ids = [item['product_id'] for item in data['products']]
+        
+        # Query products in bulk (minimize number of queries)
+        products = Product.query.filter(Product.id.in_(product_ids)).all()
+        products_map = {product.id: product for product in products}  # Map product_id to product object
+
+        # Check stock availability and calculate total price
         for item in data['products']:
-            # Check if each product has 'product_id' and 'quantity'
-            if 'product_id' not in item or 'quantity' not in item:  
-                return jsonify({"error": "Each product must have 'product_id' and 'quantity'."}), 400
-
-            # Check if 'product_id' and 'quantity' are integers
-            if not isinstance(item['product_id'], int) or not isinstance(item['quantity'], int):
-                return jsonify({"error": "'product_id' and 'quantity' must be integers."}), 400
-
-            # Check if 'quantity' is greater than 0
-            if item['quantity'] <= 0:
-                return jsonify({"error": "'quantity' must be greater than zero."}), 400
-
-            # Check if the product exists
-            product = Product.query.get(item['product_id'])
+            product = products_map.get(item['product_id'])
+            
             if not product:
-                return jsonify({"error": f"Product ID {item['product_id']} does not exist."}), 404
+                return jsonify({"error": f"Product ID {item['product_id']} not found."}), 400
 
-            # Check if there is enough stock
+            # Lock the product row for updating its stock (this prevents race conditions)
+            product = Product.query.filter(Product.id == item['product_id']).with_for_update().first()
+
             if product.stock < item['quantity']:
                 return jsonify({"error": f"Insufficient stock for product ID {item['product_id']}."}), 400
-
-            # Calculate total price
+            
+            # Calculate total price and update stock information
             total_price += product.price * item['quantity']
-            # Update stock
             updated_stock[product.id] = product.stock - item['quantity']
 
-        # Deduct stock and create the order
-        for product_id, new_stock in updated_stock.items(): #key is product_id and value is new_stock
-            product = Product.query.get(product_id)
-            product.stock = new_stock
+        try:
+            # Update stock and create order without manually handling the transaction
+            # SQLAlchemy automatically starts a transaction on the first query or update
+            for product_id, new_stock in updated_stock.items():
+                product = products_map.get(product_id)
+                product.stock = new_stock  # Update the stock quantity
 
-        new_order = Order(products=data['products'], total_price=total_price)
-        db.session.add(new_order)
-        db.session.commit()
+            # Prepare the new order data
+            new_order = order_schema.load({"products": data['products'], "total_price": total_price}, session=db.session)
 
-        return jsonify({"message": "Order placed successfully!", "order_id": new_order.id}), 201
+            # Add new order to the session
+            db.session.add(new_order)
+
+            # Commit the transaction
+            db.session.commit()
+
+            return jsonify({"message": "Order placed successfully!"}), 201
+
+        except Exception as e:
+            # In case of error, we rollback the transaction
+            db.session.rollback()  # Rollback changes if any error occurs
+            return jsonify({"error": f"An error occurred while placing the order: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+            return jsonify({"error": str(e)}), 500
 
 @bp.route('/', methods=['GET'])
 def get_all_orders():

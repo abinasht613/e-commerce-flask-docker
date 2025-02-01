@@ -1,1 +1,8 @@
 .env
+.env.test
+.pytest_cache
+__pycache__
+flask.__pycache__
+flask/models/__pycache__
+flask/routes/__pycache__
+flask/tests/__pycache__
